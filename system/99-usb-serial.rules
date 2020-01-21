@@ -1,0 +1,15 @@
+# Create sym links between USB devices (arduinos) product serial number and a nickname
+#
+# Get the vendor id by running: udevadm info -a -n /dev/ttyACM0 | grep '{idVendor}' | head -n1
+# Get the produce id by running: udevadm info -a -n /dev/ttyACM0 | grep '{idProduct}' | head -n1
+# Get the product serial by running: udevadm info -a -n /dev/ttyACM0 | grep '{serial}' | head -n1
+# 
+# NOTE: Change the /dev/ttyACM0 to whatever port the device is on
+#
+# Source: http://hintshop.ludvig.co.nz/show/persistent-names-usb-serial-devices/
+#
+# Reload these rules by running: sudo udevadm control --reload-rules && udevadm trigger
+# Then replug the device
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0010", ATTRS{serial}=="75633313233351214242", SYMLINK+="mega2560-dev"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="75436343530351811221", SYMLINK+="mega2560-base"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", ATTRS{serial}=="75633313133351F0E161", SYMLINK+="uno-controller"
