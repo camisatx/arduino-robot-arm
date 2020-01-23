@@ -1,0 +1,109 @@
+#include <Arduino.h>
+#include <SPI.h>
+#include <Wire.h>       //display
+
+#include <LiquidCrystal.h>  //display
+#include <RH_NRF24.h>           //radio
+#include <RHReliableDatagram.h> //radio
+
+//Radio - transceiver
+#define CLIENT_ADDRESS 1  //controller
+#define SERVER_ADDRESS 2  //base
+//delcare the radio driver to use
+RH_NRF24 driver(48, 53);   //CE, CSN
+//class to manage message delivery and receipt, using the driver declared
+RHReliableDatagram manager(driver, SERVER_ADDRESS);
+
+//LCD panel
+const int rs=22, en=24, d4=26, d5=28, d6=30, d7=32;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+//Declare the return message
+uint8_t data[] = "Data received";
+//Declare the message buffer
+uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(13, OUTPUT);
+
+  // initialize LCD and set up the number of columns and rows:
+  lcd.begin(16, 2);
+  lcd.clear();
+  lcd.print("Initializing...");
+
+  //initialize nrf24 object
+  if (!manager.init())
+    Serial.println("Radio manager init failed");
+    lcd.clear();
+    lcd.print("Radiot init failed");
+  //defaults after init are 2.402 Ghz (channel 2), 2Mbps, 0dBm
+  //nrf24.setChannel(1);
+    //Serial.println("nrf24 set channel failed");
+  //nrf24.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm);
+    //Serial.println("nrf24 setRF failed");
+
+  Serial.println("Initialized and receiving...");
+  lcd.clear();
+  lcd.print("Conn: ");
+}
+
+void loop() {
+  if (manager.available()) {
+    digitalWrite(13, HIGH);
+    //wait for message addressed to us from the client
+    uint8_t len = sizeof(buf);
+    uint8_t from;
+    if (manager.recvfromAck(buf, &len, &from)) {
+      Serial.print("Received response from 0x");
+      Serial.print(from, HEX);
+      Serial.print(" - LX:");
+      Serial.print(buf[0]);
+      Serial.print("\tLY:");
+      Serial.print(buf[1]);
+      Serial.print("\tLSW:");
+      Serial.print(buf[2]);
+      Serial.print("\tRX:");
+      Serial.print(buf[3]);
+      Serial.print("\tRY:");
+      Serial.print(buf[4]);
+      Serial.print("\tRSW:");
+      Serial.println(buf[5]);
+
+      lcd.setCursor(6, 0);
+      lcd.print("          ");  //clear row
+      lcd.setCursor(6, 0);
+      lcd.print("LIVE");
+      lcd.setCursor(0, 1);
+      lcd.print("                ");  //clear row
+      lcd.setCursor(0, 1);
+      lcd.print(buf[0]);
+      lcd.print(";");
+      lcd.print(buf[1]);
+      lcd.print(";");
+      lcd.print(buf[3]);
+      lcd.print(";");
+      lcd.print(buf[4]);
+
+      //send reply back to client
+      if (!manager.sendtoWait(data, sizeof(data), from)) {
+        Serial.print("sendtoWait failed");
+      }
+    } else {
+      Serial.println("Recv failed");
+      lcd.setCursor(6, 0);
+      lcd.print("          ");  //clear row
+      lcd.setCursor(6, 0);
+      lcd.print("FAILED");
+    }
+    digitalWrite(13, LOW);
+  //} else {
+  //  Serial.println("no signal");
+  //  lcd.setCursor(6, 0);
+  //  lcd.print("          ");  //clear row
+  //  lcd.setCursor(6, 0);
+  //  lcd.print("NO SIGNAL");
+  //  delay(1000);
+  }
+}
