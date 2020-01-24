@@ -6,6 +6,8 @@
 #include <RH_NRF24.h>           //radio
 #include <RHReliableDatagram.h> //radio
 
+#include <LcdChar.h>  //LCD characters
+
 //Radio - transceiver
 #define CLIENT_ADDRESS 1  //controller
 #define SERVER_ADDRESS 2  //base
@@ -31,78 +33,6 @@ LiquidCrystal_I2C lcd(0x3F, 16, 2);
 uint8_t data[6];
 //Define the message buffer
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
-
-//LCD characters
-byte CharUp[8] = {
-  0b00000,
-  0b00100,
-  0b01110,
-  0b11111,
-  0b00100,
-  0b00100,
-  0b00100,
-  0b00100
-};
-byte CharDown[8] = {
-  0b00100,
-  0b00100,
-  0b00100,
-  0b00100,
-  0b11111,
-  0b01110,
-  0b00100,
-  0b00000
-};
-byte CharLeft[8] = {
-  0b00000,
-  0b00100,
-  0b01100,
-  0b11111,
-  0b01100,
-  0b00100,
-  0b00000,
-  0b00000
-};
-byte CharRight[8] = {
-  0b00000,
-  0b00100,
-  0b00110,
-  0b11111,
-  0b00110,
-  0b00100,
-  0b00000,
-  0b00000
-};
-byte CharSignalFull[8] = {
-  0b01110,
-  0b11011,
-  0b10001,
-  0b00000,
-  0b01110,
-  0b01010,
-  0b00000,
-  0b00100
-};
-byte CharSignalPartial[8] = {
-  0b00000,
-  0b00000,
-  0b00000,
-  0b00000,
-  0b01110,
-  0b01010,
-  0b00000,
-  0b00100
-};
-byte CharX[8] = {
-  0b00000,
-  0b10001,
-  0b01010,
-  0b00100,
-  0b00100,
-  0b01010,
-  0b10001,
-  0b00000
-};
 
 void setup() {
   Serial.begin(9600);
