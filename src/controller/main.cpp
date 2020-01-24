@@ -73,6 +73,36 @@ byte CharRight[8] = {
   0b00000,
   0b00000
 };
+byte CharSignalFull[8] = {
+  0b01110,
+  0b11011,
+  0b10001,
+  0b00000,
+  0b01110,
+  0b01010,
+  0b00000,
+  0b00100
+};
+byte CharSignalPartial[8] = {
+  0b00000,
+  0b00000,
+  0b00000,
+  0b00000,
+  0b01110,
+  0b01010,
+  0b00000,
+  0b00100
+};
+byte CharX[8] = {
+  0b00000,
+  0b10001,
+  0b01010,
+  0b00100,
+  0b00100,
+  0b01010,
+  0b10001,
+  0b00000
+};
 
 void setup() {
   Serial.begin(9600);
@@ -89,6 +119,9 @@ void setup() {
   lcd.createChar(1, CharDown);
   lcd.createChar(2, CharLeft);
   lcd.createChar(3, CharRight);
+  lcd.createChar(4, CharSignalFull);
+  lcd.createChar(5, CharSignalPartial);
+  lcd.createChar(6, CharX);
 
   //initialize manager object
   if (!manager.init())
@@ -110,8 +143,10 @@ void setup() {
   Serial.println("Initialized");
   lcd.clear();
   lcd.print("L:");
-  lcd.setCursor(8, 0);
+  lcd.setCursor(7, 0);
   lcd.print("R:");
+  lcd.setCursor(0, 1);
+  lcd.print("ST:");
 }
 
 void loop() {
@@ -147,7 +182,7 @@ void loop() {
   int right_joy_x_reading = analogRead(RIGHT_JOY_X);
   if (right_joy_x_reading < 470 || right_joy_x_reading > 550) {
     data[3] = map(right_joy_x_reading, 0, 1023, 0, 255);
-    lcd.setCursor(11, 0);
+    lcd.setCursor(10, 0);
     if (data[3] < 127) {
       lcd.write(byte(2));
     } else {
@@ -155,13 +190,13 @@ void loop() {
     }
   } else {
     data[3] = 127;
-    lcd.setCursor(11, 0);
+    lcd.setCursor(10, 0);
     lcd.print(" ");
   }
   int right_joy_y_reading = analogRead(RIGHT_JOY_Y);
   if (right_joy_y_reading < 470 || right_joy_y_reading > 550) {
     data[4] = map(right_joy_y_reading, 0, 1023, 0, 255);
-    lcd.setCursor(13, 0);
+    lcd.setCursor(12, 0);
     if (data[4] < 127) {
       lcd.write(byte(1));
     } else {
@@ -169,7 +204,7 @@ void loop() {
     }
   } else {
     data[4] = 127;
-    lcd.setCursor(13, 0);
+    lcd.setCursor(12, 0);
     lcd.print(" ");
   }
   data[2] = digitalRead(LEFT_JOY_SW);
@@ -198,21 +233,23 @@ void loop() {
     if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
       Serial.print("Got reply from 0x");
       Serial.print(from, HEX);
-      Serial.print(": ");
-      Serial.println((char*)buf);
-      lcd.setCursor(0, 1);
-      lcd.print("LK: ");  //link to base status
-      lcd.print(buf[0]);
-      lcd.setCursor(8, 1);
-      lcd.print("ST: ");  //base state
+      lcd.setCursor(15, 0);
+      if (buf[0] == 1) {
+        lcd.write(byte(4));
+      } else {
+        lcd.write(byte(6));
+      }
+      lcd.setCursor(4, 1);
       lcd.print(buf[1]);
     } else {
       Serial.println("No reply. Is base nrf24 running?");
     }
   } else {
     Serial.println("Recv failed");
-    lcd.setCursor(0, 1);
-    lcd.print("LK: NA  ST: NA");
+    lcd.setCursor(15, 0);
+    lcd.write(byte(6));
+    lcd.setCursor(4, 1);
+    lcd.print("NA");
   }
 
   digitalWrite(13, LOW);
