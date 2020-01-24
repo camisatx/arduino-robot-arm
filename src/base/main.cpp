@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <SPI.h>
+#include <Servo.h>
 #include <Wire.h>       //display
 
 #include <LiquidCrystal.h>  //display
@@ -18,8 +18,13 @@ RHReliableDatagram manager(driver, SERVER_ADDRESS);
 const int rs=22, en=24, d4=26, d5=28, d6=30, d7=32;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-//Declare the return message
-uint8_t data[] = "Data received";
+//Initialize the servos
+#define SERVO_1   7
+Servo servo1;
+int servo1_angle = 90;
+
+//Declare the return data: link status, base state
+uint8_t data[2];
 //Declare the message buffer
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
 
@@ -28,7 +33,7 @@ void setup() {
 
   pinMode(13, OUTPUT);
 
-  // initialize LCD and set up the number of columns and rows:
+  //initialize LCD and set up the number of columns and rows:
   lcd.begin(16, 2);
   lcd.clear();
   lcd.print("Initializing...");
@@ -44,9 +49,13 @@ void setup() {
   //nrf24.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm);
     //Serial.println("nrf24 setRF failed");
 
+  //attach the servos
+  servo1.attach(SERVO_1);
+  servo1.write(servo1_angle);
+
   Serial.println("Initialized and receiving...");
   lcd.clear();
-  lcd.print("Conn: ");
+  lcd.print("LK:");
 }
 
 void loop() {
@@ -56,7 +65,7 @@ void loop() {
     uint8_t len = sizeof(buf);
     uint8_t from;
     if (manager.recvfromAck(buf, &len, &from)) {
-      Serial.print("Received response from 0x");
+      Serial.print("Response from 0x");
       Serial.print(from, HEX);
       Serial.print(" - LX:");
       Serial.print(buf[0]);
@@ -69,11 +78,11 @@ void loop() {
       Serial.print("\tRY:");
       Serial.print(buf[4]);
       Serial.print("\tRSW:");
-      Serial.println(buf[5]);
+      Serial.print(buf[5]);
 
-      lcd.setCursor(6, 0);
-      lcd.print("          ");  //clear row
-      lcd.setCursor(6, 0);
+      lcd.setCursor(4, 0);
+      lcd.print("            ");  //clear row
+      lcd.setCursor(4, 0);
       lcd.print("LIVE");
       lcd.setCursor(0, 1);
       lcd.print("                ");  //clear row
@@ -85,6 +94,19 @@ void loop() {
       lcd.print(buf[3]);
       lcd.print(";");
       lcd.print(buf[4]);
+
+      if (buf[0] < 124 || buf[0] > 130) {
+        int left_joy_x_delta = map(buf[0], 0, 255, -8, 8);
+        if (servo1_angle + left_joy_x_delta > 0 &&
+            servo1_angle + left_joy_x_delta < 180) {
+          servo1_angle += left_joy_x_delta;
+        }
+      }
+      Serial.print("\t");
+      Serial.println(servo1_angle);
+
+      data[0] = 1;
+      data[1] = 2;
 
       //send reply back to client
       if (!manager.sendtoWait(data, sizeof(data), from)) {
@@ -100,10 +122,11 @@ void loop() {
     digitalWrite(13, LOW);
   //} else {
   //  Serial.println("no signal");
-  //  lcd.setCursor(6, 0);
-  //  lcd.print("          ");  //clear row
-  //  lcd.setCursor(6, 0);
+  //  lcd.setCursor(4, 0);
+  //  lcd.print("            ");  //clear row
+  //  lcd.setCursor(4, 0);
   //  lcd.print("NO SIGNAL");
   //  delay(1000);
   }
+  servo1.write(servo1_angle);
 }
