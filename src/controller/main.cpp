@@ -14,7 +14,7 @@
 //delcare the radio driver to use
 RH_NRF24 driver(8, 7); // CE, CSN
 //class to manage message delivery and receipt, using the driver declared
-RHReliableDatagram manager(driver, CLIENT_ADDRESS);
+//RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
 //LCD panel
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
@@ -54,8 +54,9 @@ void setup() {
   lcd.createChar(6, CharX);
 
   //initialize manager object
-  if (!manager.init())
-    Serial.println("Radio manager init failed");
+  if (!driver.init())
+  //if (!manager.init())
+    Serial.println("Radio init failed");
     lcd.clear();
     lcd.print("Radio init failed");
   //defaults after init are 2.402 Ghz (channel 2), 2Mbps, 0dBm
@@ -157,12 +158,18 @@ void loop() {
   Serial.println("Sending joystick data");
 
   digitalWrite(13, HIGH);
-  if (manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS)) {
+  driver.send(data, sizeof(data));
+  driver.waitPacketSent();
     uint8_t len = sizeof(buf);
-    uint8_t from;
-    if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-      Serial.print("Got reply from 0x");
-      Serial.print(from, HEX);
+  //only wait 1 millisec before continuing
+  if (driver.waitAvailableTimeout(1)) {
+    if (driver.recv(buf, &len)) {
+  //if (manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS)) {
+  //  uint8_t len = sizeof(buf);
+  //  uint8_t from;
+  //  if (manager.recvfromAckTimeout(buf, &len, 1000, &from)) {
+      //Serial.print("Got reply from 0x");
+      //Serial.print(from, HEX);
       lcd.setCursor(15, 0);
       if (buf[0] == 1) {
         lcd.write(byte(4));

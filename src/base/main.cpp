@@ -7,12 +7,12 @@
 #include <RHReliableDatagram.h> //radio
 
 //Radio - transceiver
-#define CLIENT_ADDRESS 1  //controller
-#define SERVER_ADDRESS 2  //base
+//#define SERVER_ADDRESS 2  //base
 //delcare the radio driver to use
-RH_NRF24 driver(48, 53);   //CE, CSN
+//RH_NRF24 driver(48, 53);   //CE, CSN
+RH_NRF24 driver(53, 48);   //CE, CSN
 //class to manage message delivery and receipt, using the driver declared
-RHReliableDatagram manager(driver, SERVER_ADDRESS);
+//RHReliableDatagram manager(driver, SERVER_ADDRESS);
 
 //LCD panel
 const int rs=22, en=24, d4=26, d5=28, d6=30, d7=32;
@@ -39,8 +39,9 @@ void setup() {
   lcd.print("Initializing...");
 
   //initialize nrf24 object
-  if (!manager.init())
-    Serial.println("Radio manager init failed");
+  if (!driver.init())
+  //if (!manager.init())
+    Serial.println("Radio init failed");
     lcd.clear();
     lcd.print("Radiot init failed");
   //defaults after init are 2.402 Ghz (channel 2), 2Mbps, 0dBm
@@ -59,12 +60,14 @@ void setup() {
 }
 
 void loop() {
-  if (manager.available()) {
+  if (driver.available()) {
+  //if (manager.available()) {
     digitalWrite(13, HIGH);
     //wait for message addressed to us from the client
     uint8_t len = sizeof(buf);
     uint8_t from;
-    if (manager.recvfromAck(buf, &len, &from)) {
+    if (driver.recv(buf, &len)) {
+    //if (manager.recvfromAck(buf, &len, &from)) {
       Serial.print("Response from 0x");
       Serial.print(from, HEX);
       Serial.print(" - LX:");
@@ -109,9 +112,13 @@ void loop() {
       data[1] = 2;
 
       //send reply back to client
-      if (!manager.sendtoWait(data, sizeof(data), from)) {
-        Serial.print("sendtoWait failed");
-      }
+      data[0] = 1;  //connection
+      //data[1] = 2;  //status
+      driver.send(data, sizeof(data));
+      driver.waitPacketSent();
+      //if (!manager.sendtoWait(data, sizeof(data), from)) {
+      //  Serial.print("sendtoWait failed");
+      //}
     } else {
       Serial.println("Recv failed");
       lcd.setCursor(6, 0);
