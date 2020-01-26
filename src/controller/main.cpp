@@ -34,8 +34,14 @@ LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
 //Declare the data array: LSW, LX, LY, RSW, RX, RY
 uint8_t data[6];
+uint8_t dataOld[6];
 //Define the message buffer
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
+
+//declare functions
+void checkButtons();
+void checkJoySticks();
+void sendData();
 
 void setup() {
   Serial.begin(9600);
@@ -84,6 +90,27 @@ void setup() {
 }
 
 void loop() {
+  checkJoySticks();
+  checkButtons();
+}
+
+void checkButtons() {
+  data[2] = digitalRead(LEFT_JOY_SW);
+  data[5] = digitalRead(RIGHT_JOY_SW);
+
+  //only send data if something changed
+  if (data[2] != dataOld[2] || data[5] != dataOld[5]) {
+    sendData();
+  }
+  //replace the dataOld items the current data values
+  for (int i=0; i<6; ++i) {
+    dataOld[i] = data[i];
+  }
+}
+
+void checkJoySticks() {
+  //read potentiometers from joysticks
+
   //left joystick x
   int left_joy_x_read = analogRead(LEFT_JOY_X);
   if (left_joy_x_read < JOY_BUF_LOW || left_joy_x_read > JOY_BUF_HIGH) {
@@ -148,8 +175,6 @@ void loop() {
     lcd.setCursor(12, 0);
     lcd.print(" ");
   }
-  data[2] = digitalRead(LEFT_JOY_SW);
-  data[5] = digitalRead(RIGHT_JOY_SW);
 
   //Display the joystick data
   Serial.println("--------------------");
@@ -165,8 +190,12 @@ void loop() {
   Serial.print(data[4]);
   Serial.print("\tRSW: ");
   Serial.println(data[5]);
-  Serial.println("Sending joystick data");
+  }
+  sendData();
+}
 
+void sendData() {
+  //transmit data to the base receiver
   digitalWrite(13, HIGH);
   driver.send(data, sizeof(data));
   driver.waitPacketSent();
