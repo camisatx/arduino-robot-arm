@@ -28,6 +28,9 @@ LiquidCrystal_I2C lcd(0x3F, 16, 2);
 #define RIGHT_JOY_SW  2
 #define RIGHT_JOY_X   A0
 #define RIGHT_JOY_Y   A1
+//Joystick buffer zones; ignore analog values between these
+#define JOY_BUF_LOW    472    // 1024/2 - 30
+#define JOY_BUF_HIGH   552    // 1024/2 + 30
 
 //Declare the data array: LSW, LX, LY, RSW, RX, RY
 uint8_t data[6];
@@ -81,10 +84,11 @@ void setup() {
 }
 
 void loop() {
-  //Read the analog input, map range from 0-1023 to 0-255
-  int left_joy_x_reading = analogRead(LEFT_JOY_X);
-  if (left_joy_x_reading < 470 || left_joy_x_reading > 550) {
-    data[0] = map(left_joy_x_reading, 0, 1023, 0, 255);
+  //left joystick x
+  int left_joy_x_read = analogRead(LEFT_JOY_X);
+  if (left_joy_x_read < JOY_BUF_LOW || left_joy_x_read > JOY_BUF_HIGH) {
+    //convert analog 0-1024 to byte 0-255
+    data[0] = max(1, left_joy_x_read >> 2);
     lcd.setCursor(3, 0);
     if (data[0] < 127) {
       lcd.write(byte(2));
@@ -96,9 +100,11 @@ void loop() {
     lcd.setCursor(3, 0);
     lcd.print(" ");
   }
-  int left_joy_y_reading = analogRead(LEFT_JOY_Y);
-  if (left_joy_y_reading < 470 || left_joy_y_reading > 550) {
-    data[1] = map(left_joy_y_reading, 0, 1023, 0, 255);
+
+  //left joystick y
+  int left_joy_y_read = analogRead(LEFT_JOY_Y);
+  if (left_joy_y_read < JOY_BUF_LOW || left_joy_y_read > JOY_BUF_HIGH) {
+    data[1] = max(1, left_joy_y_read >> 2);
     lcd.setCursor(5, 0);
     if (data[1] < 127) {
       lcd.write(byte(1));
@@ -110,9 +116,11 @@ void loop() {
     lcd.setCursor(5, 0);
     lcd.print(" ");
   }
-  int right_joy_x_reading = analogRead(RIGHT_JOY_X);
-  if (right_joy_x_reading < 470 || right_joy_x_reading > 550) {
-    data[3] = map(right_joy_x_reading, 0, 1023, 0, 255);
+  
+  //right joystick x
+  int right_joy_x_read = analogRead(RIGHT_JOY_X);
+  if (right_joy_x_read < JOY_BUF_LOW || right_joy_x_read > JOY_BUF_HIGH) {
+    data[3] = max(1, right_joy_x_read >> 2);
     lcd.setCursor(10, 0);
     if (data[3] < 127) {
       lcd.write(byte(2));
@@ -124,9 +132,11 @@ void loop() {
     lcd.setCursor(10, 0);
     lcd.print(" ");
   }
-  int right_joy_y_reading = analogRead(RIGHT_JOY_Y);
-  if (right_joy_y_reading < 470 || right_joy_y_reading > 550) {
-    data[4] = map(right_joy_y_reading, 0, 1023, 0, 255);
+
+  //right joystick y
+  int right_joy_y_read = analogRead(RIGHT_JOY_Y);
+  if (right_joy_y_read < JOY_BUF_LOW || right_joy_y_read > JOY_BUF_HIGH) {
+    data[4] = max(1, right_joy_y_read >> 2);
     lcd.setCursor(12, 0);
     if (data[4] < 127) {
       lcd.write(byte(1));
