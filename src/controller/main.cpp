@@ -23,7 +23,6 @@ LiquidCrystal_I2C lcd(0x3F, 16, 2);
 #define LEFT_JOY_SW  3
 #define LEFT_JOY_X   A2
 #define LEFT_JOY_Y   A3
-
 //Right joystick
 #define RIGHT_JOY_SW  2
 #define RIGHT_JOY_X   A0
@@ -37,6 +36,12 @@ uint8_t data[6];
 uint8_t dataOld[6];
 //Define the message buffer
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
+
+//Keep track of time between receiver responses
+uint32_t time;
+
+//should debug serial lines be printed?
+bool debug = false;
 
 //declare functions
 void checkButtons();
@@ -79,6 +84,8 @@ void setup() {
   digitalWrite(LEFT_JOY_SW, HIGH);
   pinMode(RIGHT_JOY_SW, INPUT);
   digitalWrite(RIGHT_JOY_SW, HIGH);
+
+  time = millis();  //initialize the time
 
   Serial.println("Initialized");
   lcd.clear();
@@ -176,20 +183,20 @@ void checkJoySticks() {
     lcd.print(" ");
   }
 
-  //Display the joystick data
-  Serial.println("--------------------");
-  Serial.print("LX: ");
-  Serial.print(data[0]);
-  Serial.print("\tLY: ");
-  Serial.print(data[1]);
-  Serial.print("\tLSW: ");
-  Serial.print(data[2]);
-  Serial.print("\tRX: ");
-  Serial.print(data[3]);
-  Serial.print("\tRY: ");
-  Serial.print(data[4]);
-  Serial.print("\tRSW: ");
-  Serial.println(data[5]);
+  if (debug) {
+    //Display the joystick data
+    Serial.print("LX: ");
+    Serial.print(data[0]);
+    Serial.print("\tLY: ");
+    Serial.print(data[1]);
+    Serial.print("\tLSW: ");
+    Serial.print(data[2]);
+    Serial.print("\tRX: ");
+    Serial.print(data[3]);
+    Serial.print("\tRY: ");
+    Serial.print(data[4]);
+    Serial.print("\tRSW: ");
+    Serial.println(data[5]);
   }
   sendData();
 }
@@ -199,7 +206,7 @@ void sendData() {
   digitalWrite(13, HIGH);
   driver.send(data, sizeof(data));
   driver.waitPacketSent();
-    uint8_t len = sizeof(buf);
+  uint8_t len = sizeof(buf);
   //only wait 1 millisec before continuing
   if (driver.waitAvailableTimeout(1)) {
     if (driver.recv(buf, &len)) {
@@ -213,21 +220,24 @@ void sendData() {
       if (buf[0] == 1) {
         lcd.write(byte(4));
       } else {
-        lcd.write(byte(6));
+        lcd.write(byte(5));
       }
       lcd.setCursor(4, 1);
+      lcd.print("    ");
+      lcd.setCursor(4, 1);
       lcd.print(buf[1]);
+      time = millis();
     } else {
-      Serial.println("No reply. Is base nrf24 running?");
+      Serial.println("No reply. Is base receiver active?");
     }
-  } else {
-    Serial.println("Recv failed");
+  } else if (millis() - time > 2000) {
+    Serial.println("Failed to receive data");
     lcd.setCursor(15, 0);
     lcd.write(byte(6));
     lcd.setCursor(4, 1);
     lcd.print("NA");
+    delay(1000);  //no signal, so slow down loop
   }
-
   digitalWrite(13, LOW);
-  delay(100);
+  //delay(10);
 }
