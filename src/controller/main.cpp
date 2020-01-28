@@ -18,6 +18,7 @@ RH_NRF24 driver(8, 7); // CE, CSN
 
 //LCD panel
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
+uint32_t lcd_refresh;   // milliseconds before refresh angles
 
 //Left joystick
 #define LEFT_JOY_SW  3
@@ -86,6 +87,7 @@ void setup() {
   digitalWrite(RIGHT_JOY_SW, HIGH);
 
   time = millis();  //initialize the time
+  lcd_refresh = millis();  //initialize the time for lcd refresh
 
   Serial.println("Initialized");
   lcd.clear();
@@ -216,22 +218,26 @@ void sendData() {
   //  if (manager.recvfromAckTimeout(buf, &len, 1000, &from)) {
       //Serial.print("Got reply from 0x");
       //Serial.print(from, HEX);
-      lcd.setCursor(15, 0);
-      if (buf[0] == 1) {
-        lcd.write(byte(4));
-      } else {
-        lcd.write(byte(5));
+      if (millis() - lcd_refresh > 200) {
+        //only update the lcd values every 0.2 seconds
+        lcd.setCursor(15, 0);
+        if (buf[0] == 1) {
+          lcd.write(byte(4));
+        } else {
+          lcd.write(byte(5));
+        }
+        lcd.setCursor(3, 1);
+        lcd.print("             ");
+        lcd.setCursor(3, 1);
+        lcd.print(buf[1]);
+        lcd.setCursor(7, 1);
+        lcd.print(buf[2]);
+        lcd.setCursor(11, 1);
+        lcd.print(buf[4]);
+        lcd.setCursor(15, 1);
+        lcd.print(buf[6]);
+        lcd_refresh = millis();
       }
-      lcd.setCursor(3, 1);
-      lcd.print("             ");
-      lcd.setCursor(3, 1);
-      lcd.print(buf[1]);
-      lcd.setCursor(7, 1);
-      lcd.print(buf[2]);
-      lcd.setCursor(11, 1);
-      lcd.print(buf[4]);
-      lcd.setCursor(15, 1);
-      lcd.print(buf[6]);
       time = millis();
     } else {
       Serial.println("No reply. Is base receiver active?");
