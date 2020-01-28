@@ -28,18 +28,42 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 #define SERVO_4   8   //11
 #define SERVO_5   9   //12
 #define SERVO_6   10  //13
+
+//waist rotation
 Servo servo1;
+uint16_t servo1_angle = 1500;
+uint16_t servo1_min = 500;
+uint16_t servo1_max = 2500;
+
+//shoulder elevation
 Servo servo2;
+uint16_t servo2_angle = 1200;
+uint16_t servo2_min = 800;
+uint16_t servo2_max = 1900;
+
+//elbow elevation
 Servo servo3;
+uint16_t servo3_angle = 1900;
+uint16_t servo3_min = 1000;
+uint16_t servo3_max = 2400;
+
+//wrist elevation
 Servo servo4;
+uint16_t servo4_angle = 1500;
+uint16_t servo4_min = 700;
+uint16_t servo4_max = 2400;
+
+//wrist rotation
 Servo servo5;
+uint16_t servo5_angle = 1600;
+uint16_t servo5_min = 500;
+uint16_t servo5_max = 2500;
+
+//gripper open
 Servo servo6;
-uint16_t servo1_angle = 1500;   //waist rotation
-uint16_t servo2_angle = 900;    //shoulder elevation
-uint16_t servo3_angle = 1800;   //elbow elevation
-uint16_t servo4_angle = 1800;   //wrist elevation
-uint16_t servo5_angle = 1600;   //wrist rotation
-uint16_t servo6_angle = 1100;   //gripper open
+uint16_t servo6_angle = 510;
+uint16_t servo6_min = 510;
+uint16_t servo6_max = 900;
 
 //Declare the return data: link status, base state
 uint8_t data[2];
@@ -80,12 +104,12 @@ void setup() {
     //Serial.println("nrf24 setRF failed");
 
   //attach the servos
-  servo1.attach(SERVO_1, 550, 2400);
-  servo2.attach(SERVO_2, 600, 2100);
-  servo3.attach(SERVO_3, 1000, 2400);
-  servo4.attach(SERVO_4, 900, 2400);
-  servo5.attach(SERVO_5, 550, 2400);
-  servo6.attach(SERVO_6, 1000, 2000);
+  servo1.attach(SERVO_1, servo1_min, servo1_max);
+  servo2.attach(SERVO_2, servo2_min, servo2_max);
+  servo3.attach(SERVO_3, servo3_min, servo3_max);
+  servo4.attach(SERVO_4, servo4_min, servo4_max);
+  servo5.attach(SERVO_5, servo5_min, servo5_max);
+  servo6.attach(SERVO_6, servo6_min, servo6_max);
   //move servos to home position
   servo1.write(servo1_angle);
   servo2.write(servo2_angle);
@@ -107,6 +131,69 @@ void loop() {
     uint8_t from;
     if (driver.recv(buf, &len)) {
     //if (manager.recvfromAck(buf, &len, &from)) {
+      //end-effector claw
+      if (buf[2] == 0) {
+        pinMode(SERVO_6, OUTPUT);
+        servo6_angle = servo6_max;   //close
+      } else if (buf[2] == 1) {
+        pinMode(SERVO_6, OUTPUT);
+        servo6_angle = servo6_min;   //open
+      } else {
+        pinMode(SERVO_6, INPUT);
+      }
+      //wrist rotation
+      if (buf[0] < 120 || buf[0] > 135) {
+        pinMode(SERVO_5, OUTPUT);
+        int left_joy_x_delta = map(buf[0], 0, 254, -20, 20);
+        if (servo5_angle + left_joy_x_delta > servo5_min &&
+            servo5_angle + left_joy_x_delta < servo5_max) {
+          servo5_angle += left_joy_x_delta;
+        }
+      } else {
+        pinMode(SERVO_5, INPUT);
+      }
+      //wrist elevation
+      if (buf[1] < 120 || buf[1] > 135) {
+        //pinMode(SERVO_4, OUTPUT);
+        int left_joy_y_delta = map(buf[1], 0, 254, 20, -20);
+        if (servo4_angle + left_joy_y_delta > servo4_min &&
+            servo4_angle + left_joy_y_delta < servo4_max) {
+          servo4_angle += left_joy_y_delta;
+        }
+      } else {
+        //pinMode(SERVO_4, INPUT);
+      }
+      //shoulder angle
+      if (buf[3] < 120 || buf[3] > 135) {
+        pinMode(SERVO_1, OUTPUT);
+        int right_joy_x_delta = map(buf[3], 0, 254, 30, -30);
+        if (servo1_angle + right_joy_x_delta > servo1_min &&
+            servo1_angle + right_joy_x_delta < servo1_max) {
+          servo1_angle += right_joy_x_delta;
+        }
+      } else {
+        pinMode(SERVO_1, INPUT);
+      }
+      //shoulder and elbow elevation
+      if (buf[4] < 120 || buf[4] > 135) {
+        //pinMode(SERVO_2, OUTPUT);
+        pinMode(SERVO_3, OUTPUT);
+        Serial.print(buf[4]);
+        Serial.print("\t");
+        Serial.println(servo3_angle);
+        int right_joy_y_delta = map(buf[4], 0, 254, 20, -20);
+        //if (servo2_angle + right_joy_y_delta > servo2_min &&
+        //    servo2_angle + right_joy_y_delta < servo2_max) {
+        //  servo2_angle += right_joy_y_delta;
+        if (servo3_angle + right_joy_y_delta > servo3_min &&
+            servo3_angle + right_joy_y_delta < servo3_max) {
+          servo3_angle += right_joy_y_delta;
+        }
+      } else {
+        pinMode(SERVO_2, INPUT);
+        pinMode(SERVO_3, INPUT);
+      }
+
       if (debug) {
         Serial.print("Response from 0x");
         Serial.print(from, HEX);
