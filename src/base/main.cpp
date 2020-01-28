@@ -12,7 +12,6 @@
 //#define CLIENT_ADDRESS 1  //controller
 //#define SERVER_ADDRESS 2  //base
 //delcare the radio driver to use
-//RH_NRF24 driver(48, 53);   //CE, CSN
 RH_NRF24 driver(53, 48);   //CE, CSN
 //class to manage message delivery and receipt, using the driver declared
 //RHReliableDatagram manager(driver, SERVER_ADDRESS);
@@ -66,7 +65,7 @@ uint16_t servo6_min = 510;
 uint16_t servo6_max = 900;
 
 //Declare the return data: link status, base state
-uint8_t data[2];
+uint8_t data[7];
 //Declare the message buffer
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
 
@@ -195,9 +194,7 @@ void loop() {
       }
 
       if (debug) {
-        Serial.print("Response from 0x");
-        Serial.print(from, HEX);
-        Serial.print(" - 1: ");
+        Serial.print("1: ");
         Serial.print(servo1_angle);
         Serial.print("\t2: ");
         Serial.print(servo2_angle);
@@ -208,7 +205,9 @@ void loop() {
         Serial.print("\t5: ");
         Serial.print(servo5_angle);
         Serial.print("\t6: ");
-        Serial.println(servo6_angle);
+        Serial.print(servo6_angle);
+        //Serial.print("Response from 0x");
+        //Serial.print(from, HEX);
         //Serial.print(" - LX:");
         //Serial.print(buf[0]);
         //Serial.print("\tLY:");
@@ -220,39 +219,9 @@ void loop() {
         //Serial.print("\tRY:");
         //Serial.print(buf[4]);
         //Serial.print("\tRSW:");
-        //Serial.println(buf[5]);
+        //Serial.print(buf[5]);
+        Serial.println();
       }
-
-      //process all servo commands
-      if (buf[0] < 120 || buf[0] > 135) {
-        int left_joy_x_delta = map(buf[0], 0, 254, -50, 50);
-        if (servo5_angle + left_joy_x_delta > 550 &&
-            servo5_angle + left_joy_x_delta < 2400) {
-          servo5_angle += left_joy_x_delta;
-        }
-      }
-      if (buf[1] < 120 || buf[1] > 135) {
-        int left_joy_y_delta = map(buf[1], 0, 254, -50, 50);
-        if (servo4_angle + left_joy_y_delta > 1000 &&
-            servo4_angle + left_joy_y_delta < 2400) {
-          servo4_angle += left_joy_y_delta;
-        }
-      }
-      if (buf[3] < 120 || buf[3] > 135) {
-        int right_joy_x_delta = map(buf[3], 0, 254, -50, 50);
-        if (servo1_angle + right_joy_x_delta > 550 &&
-            servo1_angle + right_joy_x_delta < 2400) {
-          servo1_angle += right_joy_x_delta;
-        }
-      }
-      if (buf[4] < 120 || buf[4] > 135) {
-        int right_joy_y_delta = map(buf[4], 0, 254, -50, 50);
-        if (servo2_angle + right_joy_y_delta > 600 &&
-            servo2_angle + right_joy_y_delta < 2100) {
-          servo2_angle += right_joy_y_delta;
-        }
-      }
-
       //lcd.setCursor(15, 0);
       //lcd.write(byte(4));
       //lcd.setCursor(0, 1);
@@ -268,8 +237,12 @@ void loop() {
 
       //send reply back to client
       data[0] = 1;  //connection
-      //data[1] = 2;  //status
-      data[1] = map(servo1_angle, 544, 2400, 0, 180);
+      data[1] = map(servo1_angle, servo1_min, servo1_max, 0, 180);
+      data[2] = map(servo2_angle, servo2_min, servo2_max, 0, 180);
+      data[3] = map(servo3_angle, servo3_min, servo3_max, 0, 180);
+      data[4] = map(servo4_angle, servo4_min, servo4_max, 0, 180);
+      data[5] = map(servo5_angle, servo5_min, servo5_max, 0, 180);
+      data[6] = map(servo6_angle, servo6_min, servo6_max, 0, 180);
       driver.send(data, sizeof(data));
       driver.waitPacketSent();
       //if (!manager.sendtoWait(data, sizeof(data), from)) {

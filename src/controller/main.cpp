@@ -222,10 +222,16 @@ void sendData() {
       } else {
         lcd.write(byte(5));
       }
-      lcd.setCursor(4, 1);
-      lcd.print("    ");
-      lcd.setCursor(4, 1);
+      lcd.setCursor(3, 1);
+      lcd.print("             ");
+      lcd.setCursor(3, 1);
       lcd.print(buf[1]);
+      lcd.setCursor(7, 1);
+      lcd.print(buf[2]);
+      lcd.setCursor(11, 1);
+      lcd.print(buf[4]);
+      lcd.setCursor(15, 1);
+      lcd.print(buf[6]);
       time = millis();
     } else {
       Serial.println("No reply. Is base receiver active?");
