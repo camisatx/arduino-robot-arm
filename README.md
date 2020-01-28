@@ -1,4 +1,7 @@
 [//]: # (image reference)
+[controller_complete]: ./images/controller-complete.jpg
+[controller_lcd_active]: ./images/controller-lcd-active.jpg
+[controller_lcd_failed]: ./images/controller-lcd-failed.jpg
 [robot_arm_and_controller]: ./images/robot-arm-kit-finished-2.jpg
 [robot_arm_electronics]: ./images/complete-electronics.jpg
 [shield_picture]: ./images/SainSmart-Robot-Shield-Arduino-MEGA2560-R3.jpg
@@ -51,3 +54,15 @@ For each movement received, an error check ensures the command keeps the servo w
 ### Arm feedback
 
 After processing arm movements, the arm transmits its status back to the controller. This command allows the controller to know whether it has a live connection with the arm. Currently, this is only used to inform the operator and does not impact system operation.
+
+## Controller LCD
+
+![Controller complete][controller_complete]
+
+The following image shows the LCD status during normal operation. The top row shows the direction of the joystick signals, and the state of the connection between the controller and robot arm. The bottom row shows the servo angles and the status of the claw (open or close).
+
+![Controller LCD active][controller_lcd_active]
+
+The following image shows the LCD status with a failed connection between the controller and robot arm. The top row will still show the joystick signals, however, the connection status will show an `X`. The bottom row will show `NA` indicating no data is available.
+
+![Controller LCD failed][controller_lcd_failed]
