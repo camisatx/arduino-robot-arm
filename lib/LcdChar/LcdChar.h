@@ -10,5 +10,7 @@ extern byte CharRight[8];
 extern byte CharSignalFull[8];
 extern byte CharSignalPartial[8];
 extern byte CharX[8];
+extern byte CharClawOpen[8];
+extern byte CharClawClose[8];
 
 #endif

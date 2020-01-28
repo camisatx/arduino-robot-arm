@@ -65,8 +65,9 @@ void setup() {
   lcd.createChar(2, CharLeft);
   lcd.createChar(3, CharRight);
   lcd.createChar(4, CharSignalFull);
-  lcd.createChar(5, CharSignalPartial);
-  lcd.createChar(6, CharX);
+  lcd.createChar(5, CharX);
+  lcd.createChar(6, CharClawOpen);
+  lcd.createChar(7, CharClawClose);
 
   //initialize manager object
   if (!driver.init())
@@ -235,7 +236,11 @@ void sendData() {
         lcd.setCursor(11, 1);
         lcd.print(buf[4]);
         lcd.setCursor(15, 1);
-        lcd.print(buf[6]);
+        if (buf[6] == 0) {
+          lcd.write(byte(6));
+        } else {
+          lcd.write(byte(7));
+        }
         lcd_refresh = millis();
       }
       time = millis();
@@ -245,9 +250,9 @@ void sendData() {
   } else if (millis() - time > 2000) {
     Serial.println("Failed to receive data");
     lcd.setCursor(15, 0);
-    lcd.write(byte(6));
-    lcd.setCursor(4, 1);
-    lcd.print("NA");
+    lcd.write(byte(5));
+    lcd.setCursor(3, 1);
+    lcd.print(" NA          ");
     delay(1000);  //no signal, so slow down loop
   }
   digitalWrite(13, LOW);
