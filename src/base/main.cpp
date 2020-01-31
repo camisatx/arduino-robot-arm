@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <Servo.h>
 #include <Wire.h>       //display
 
+#include <Adafruit_PWMServoDriver.h>  //servo driver
 #include <LiquidCrystal.h>  //display
 #include <RH_NRF24.h>           //radio
 #include <RHReliableDatagram.h> //radio
@@ -12,7 +12,8 @@
 //#define CLIENT_ADDRESS 1  //controller
 //#define SERVER_ADDRESS 2  //base
 //delcare the radio driver to use
-RH_NRF24 driver(53, 48);   //CE, CSN
+RH_NRF24 driver(48, 53);   //CE, CSN  // mega2560 direct
+//RH_NRF24 driver(53, 48);   //CE, CSN  //sainsmart meta2560 servo shield
 //class to manage message delivery and receipt, using the driver declared
 //RHReliableDatagram manager(driver, SERVER_ADDRESS);
 
@@ -20,46 +21,42 @@ RH_NRF24 driver(53, 48);   //CE, CSN
 const int rs=22, en=24, d4=26, d5=28, d6=30, d7=32;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-//Initialize the servos - PCD silkscreen error 8, 9, 10 are actually 11, 12, 13
-#define SERVO_1   11  //8
-#define SERVO_2   12  //9
-#define SERVO_3   13  //10
-#define SERVO_4   8   //11
-#define SERVO_5   9   //12
-#define SERVO_6   10  //13
+//I2C PCA9687 PWM servo driver
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+#define SERVO_FREQ  50  //frequency of the servos; 50hz
 
 //waist rotation
-Servo servo1;
+#define SERVO_1   0
 uint16_t servo1_angle = 1500;
 uint16_t servo1_min = 500;
 uint16_t servo1_max = 2500;
 
 //shoulder elevation
-Servo servo2;
+#define SERVO_2   1
 uint16_t servo2_angle = 1200;
 uint16_t servo2_min = 800;
 uint16_t servo2_max = 1900;
 
 //elbow elevation
-Servo servo3;
+#define SERVO_3   2
 uint16_t servo3_angle = 1900;
 uint16_t servo3_min = 1000;
 uint16_t servo3_max = 2400;
 
 //wrist elevation
-Servo servo4;
+#define SERVO_4   3
 uint16_t servo4_angle = 1500;
 uint16_t servo4_min = 700;
 uint16_t servo4_max = 2400;
 
 //wrist rotation
-Servo servo5;
+#define SERVO_5   4
 uint16_t servo5_angle = 1600;
 uint16_t servo5_min = 500;
 uint16_t servo5_max = 2500;
 
 //gripper open
-Servo servo6;
+#define SERVO_6   5
 uint16_t servo6_angle = 510;
 uint16_t servo6_min = 510;
 uint16_t servo6_max = 900;
@@ -102,20 +99,16 @@ void setup() {
   //nrf24.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm);
     //Serial.println("nrf24 setRF failed");
 
-  //attach the servos
-  servo1.attach(SERVO_1, servo1_min, servo1_max);
-  servo2.attach(SERVO_2, servo2_min, servo2_max);
-  servo3.attach(SERVO_3, servo3_min, servo3_max);
-  servo4.attach(SERVO_4, servo4_min, servo4_max);
-  servo5.attach(SERVO_5, servo5_min, servo5_max);
-  servo6.attach(SERVO_6, servo6_min, servo6_max);
+  pwm.begin();
+  pwm.setPWMFreq(SERVO_FREQ);
+
   //move servos to home position
-  servo1.write(servo1_angle);
-  servo2.write(servo2_angle);
-  servo3.write(servo3_angle);
-  servo4.write(servo4_angle);
-  servo5.write(servo5_angle);
-  servo6.write(servo6_angle);
+  pwm.setPWM(SERVO_1, 0, int(float(servo1_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_2, 0, int(float(servo2_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_3, 0, int(float(servo3_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_4, 0, int(float(servo4_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_5, 0, int(float(servo5_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_6, 0, int(float(servo6_angle)/1000000*SERVO_FREQ*4096));
 
   Serial.println("Initialized and receiving...");
   lcd.clear();
@@ -132,24 +125,24 @@ void loop() {
     //if (manager.recvfromAck(buf, &len, &from)) {
       //end-effector claw
       if (buf[2] == 0) {
-        pinMode(SERVO_6, OUTPUT);
+        //pinMode(SERVO_6, OUTPUT);
         servo6_angle = servo6_max;   //close
       } else if (buf[2] == 1) {
-        pinMode(SERVO_6, OUTPUT);
+        //pinMode(SERVO_6, OUTPUT);
         servo6_angle = servo6_min;   //open
       } else {
-        pinMode(SERVO_6, INPUT);
+        //pinMode(SERVO_6, INPUT);
       }
       //wrist rotation
       if (buf[0] < 120 || buf[0] > 135) {
-        pinMode(SERVO_5, OUTPUT);
+        //pinMode(SERVO_5, OUTPUT);
         int left_joy_x_delta = map(buf[0], 0, 254, -20, 20);
         if (servo5_angle + left_joy_x_delta > servo5_min &&
             servo5_angle + left_joy_x_delta < servo5_max) {
           servo5_angle += left_joy_x_delta;
         }
       } else {
-        pinMode(SERVO_5, INPUT);
+        //pinMode(SERVO_5, INPUT);
       }
       //wrist elevation
       if (buf[1] < 120 || buf[1] > 135) {
@@ -164,22 +157,19 @@ void loop() {
       }
       //shoulder angle
       if (buf[3] < 120 || buf[3] > 135) {
-        pinMode(SERVO_1, OUTPUT);
+        //pinMode(SERVO_1, OUTPUT);
         int right_joy_x_delta = map(buf[3], 0, 254, 30, -30);
         if (servo1_angle + right_joy_x_delta > servo1_min &&
             servo1_angle + right_joy_x_delta < servo1_max) {
           servo1_angle += right_joy_x_delta;
         }
       } else {
-        pinMode(SERVO_1, INPUT);
+        //pinMode(SERVO_1, INPUT);
       }
       //shoulder and elbow elevation
       if (buf[4] < 120 || buf[4] > 135) {
         //pinMode(SERVO_2, OUTPUT);
-        pinMode(SERVO_3, OUTPUT);
-        Serial.print(buf[4]);
-        Serial.print("\t");
-        Serial.println(servo3_angle);
+        //pinMode(SERVO_3, OUTPUT);
         int right_joy_y_delta = map(buf[4], 0, 254, 20, -20);
         //if (servo2_angle + right_joy_y_delta > servo2_min &&
         //    servo2_angle + right_joy_y_delta < servo2_max) {
@@ -189,8 +179,8 @@ void loop() {
           servo3_angle += right_joy_y_delta;
         }
       } else {
-        pinMode(SERVO_2, INPUT);
-        pinMode(SERVO_3, INPUT);
+        //pinMode(SERVO_2, INPUT);
+        //pinMode(SERVO_3, INPUT);
       }
 
       if (debug) {
@@ -255,10 +245,10 @@ void loop() {
     }
     digitalWrite(13, LOW);
   }
-  servo1.writeMicroseconds(servo1_angle);
-  servo2.writeMicroseconds(servo2_angle);
-  servo3.writeMicroseconds(servo3_angle);
-  servo4.writeMicroseconds(servo4_angle);
-  servo5.writeMicroseconds(servo5_angle);
-  servo6.writeMicroseconds(servo6_angle);
+  pwm.setPWM(SERVO_1, 0, int(float(servo1_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_2, 0, int(float(servo2_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_3, 0, int(float(servo3_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_4, 0, int(float(servo4_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_5, 0, int(float(servo5_angle)/1000000*SERVO_FREQ*4096));
+  pwm.setPWM(SERVO_6, 0, int(float(servo6_angle)/1000000*SERVO_FREQ*4096));
 }
