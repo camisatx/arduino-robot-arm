@@ -9,12 +9,7 @@
 #include <LcdChar.h>  //LCD characters
 
 //Radio - transceiver
-#define CLIENT_ADDRESS 1  //controller
-#define SERVER_ADDRESS 2  //base
-//delcare the radio driver to use
 RH_NRF24 driver(8, 7); // CE, CSN
-//class to manage message delivery and receipt, using the driver declared
-//RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
 //LCD panel
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
@@ -35,6 +30,7 @@ uint32_t lcd_refresh;   // milliseconds before refresh angles
 //Declare the data array: LSW, LX, LY, RSW, RX, RY
 uint8_t data[6];
 uint8_t dataOld[6];
+uint8_t dataRec[6]; //data received old
 //Define the message buffer
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
 
@@ -71,7 +67,6 @@ void setup() {
 
   //initialize manager object
   if (!driver.init())
-  //if (!manager.init())
     Serial.println("Radio init failed");
     lcd.clear();
     lcd.print("Radio init failed");
@@ -97,6 +92,8 @@ void setup() {
   lcd.print("R:");
   lcd.setCursor(0, 1);
   lcd.print("ST:");
+
+  dataRec[5] = 2; //hack to get the claw status showing on lcd
 }
 
 void loop() {
@@ -213,10 +210,6 @@ void sendData() {
   //only wait 1 millisec before continuing
   if (driver.waitAvailableTimeout(1)) {
     if (driver.recv(buf, &len)) {
-  //if (manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS)) {
-  //  uint8_t len = sizeof(buf);
-  //  uint8_t from;
-  //  if (manager.recvfromAckTimeout(buf, &len, 1000, &from)) {
       //Serial.print("Got reply from 0x");
       //Serial.print(from, HEX);
       if (millis() - lcd_refresh > 200) {
@@ -227,19 +220,43 @@ void sendData() {
         } else {
           lcd.write(byte(5));
         }
-        lcd.setCursor(3, 1);
-        lcd.print("             ");
-        lcd.setCursor(3, 1);
-        lcd.print(buf[1]);
-        lcd.setCursor(7, 1);
-        lcd.print(buf[2]);
-        lcd.setCursor(11, 1);
-        lcd.print(buf[4]);
-        lcd.setCursor(15, 1);
-        if (buf[6] == 0) {
-          lcd.write(byte(6));
-        } else {
-          lcd.write(byte(7));
+        if (buf[1] != dataRec[0]) {
+          lcd.setCursor(3, 1);
+          lcd.print("   ");
+          lcd.setCursor(3, 1);
+          lcd.print(buf[1]);
+          dataRec[0] = buf[1];
+        }
+        if (buf[2] != dataRec[1]) {
+          lcd.setCursor(7, 1);
+          lcd.print("   ");
+          lcd.setCursor(7, 1);
+          lcd.print(buf[2]);
+          dataRec[1] = buf[2];
+        }
+        if (buf[3] != dataRec[2]) {
+          dataRec[2] = buf[3];
+        }
+        if (buf[4] != dataRec[3]) {
+          lcd.setCursor(11, 1);
+          lcd.print("   ");
+          lcd.setCursor(11, 1);
+          lcd.print(buf[4]);
+          dataRec[3] = buf[4];
+        }
+        if (buf[5] != dataRec[4]) {
+          dataRec[4] = buf[5];
+        }
+        if (buf[6] != dataRec[5]) {
+          lcd.setCursor(15, 1);
+          lcd.print("   ");
+          lcd.setCursor(15, 1);
+          if (buf[6] == 0) {
+            lcd.write(byte(6));
+          } else {
+            lcd.write(byte(7));
+          }
+          dataRec[5] = buf[6];
         }
         lcd_refresh = millis();
       }
