@@ -9,13 +9,10 @@
 #include <LcdChar.h>  //LCD characters
 
 //Radio - transceiver
-//#define CLIENT_ADDRESS 1  //controller
-//#define SERVER_ADDRESS 2  //base
 //delcare the radio driver to use
 RH_NRF24 driver(48, 53);   //CE, CSN  // mega2560 direct
 //RH_NRF24 driver(53, 48);   //CE, CSN  //sainsmart meta2560 servo shield
 //class to manage message delivery and receipt, using the driver declared
-//RHReliableDatagram manager(driver, SERVER_ADDRESS);
 
 //LCD panel
 const int rs=22, en=24, d4=26, d5=28, d6=30, d7=32;
@@ -125,62 +122,45 @@ void loop() {
     //if (manager.recvfromAck(buf, &len, &from)) {
       //end-effector claw
       if (buf[2] == 0) {
-        //pinMode(SERVO_6, OUTPUT);
         servo6_angle = servo6_max;   //close
       } else if (buf[2] == 1) {
-        //pinMode(SERVO_6, OUTPUT);
         servo6_angle = servo6_min;   //open
-      } else {
-        //pinMode(SERVO_6, INPUT);
       }
       //wrist rotation
       if (buf[0] < 120 || buf[0] > 135) {
-        //pinMode(SERVO_5, OUTPUT);
         int left_joy_x_delta = map(buf[0], 0, 254, -20, 20);
         if (servo5_angle + left_joy_x_delta > servo5_min &&
             servo5_angle + left_joy_x_delta < servo5_max) {
           servo5_angle += left_joy_x_delta;
         }
-      } else {
-        //pinMode(SERVO_5, INPUT);
       }
       //wrist elevation
       if (buf[1] < 120 || buf[1] > 135) {
-        //pinMode(SERVO_4, OUTPUT);
         int left_joy_y_delta = map(buf[1], 0, 254, 20, -20);
         if (servo4_angle + left_joy_y_delta > servo4_min &&
             servo4_angle + left_joy_y_delta < servo4_max) {
           servo4_angle += left_joy_y_delta;
         }
-      } else {
-        //pinMode(SERVO_4, INPUT);
       }
       //shoulder angle
       if (buf[3] < 120 || buf[3] > 135) {
-        //pinMode(SERVO_1, OUTPUT);
         int right_joy_x_delta = map(buf[3], 0, 254, 30, -30);
         if (servo1_angle + right_joy_x_delta > servo1_min &&
             servo1_angle + right_joy_x_delta < servo1_max) {
           servo1_angle += right_joy_x_delta;
         }
-      } else {
-        //pinMode(SERVO_1, INPUT);
       }
       //shoulder and elbow elevation
       if (buf[4] < 120 || buf[4] > 135) {
-        //pinMode(SERVO_2, OUTPUT);
-        //pinMode(SERVO_3, OUTPUT);
         int right_joy_y_delta = map(buf[4], 0, 254, 20, -20);
-        //if (servo2_angle + right_joy_y_delta > servo2_min &&
-        //    servo2_angle + right_joy_y_delta < servo2_max) {
-        //  servo2_angle += right_joy_y_delta;
+        if (servo2_angle + -right_joy_y_delta > servo2_min &&
+            servo2_angle + -right_joy_y_delta < servo2_max) {
+          servo2_angle += -right_joy_y_delta;
+        }
         if (servo3_angle + right_joy_y_delta > servo3_min &&
             servo3_angle + right_joy_y_delta < servo3_max) {
           servo3_angle += right_joy_y_delta;
         }
-      } else {
-        //pinMode(SERVO_2, INPUT);
-        //pinMode(SERVO_3, INPUT);
       }
 
       if (debug) {
