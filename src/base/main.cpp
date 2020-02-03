@@ -54,9 +54,9 @@ uint16_t servo5_max = 2500;
 
 //gripper open
 #define SERVO_6   5
-uint16_t servo6_angle = 510;
-uint16_t servo6_min = 510;
-uint16_t servo6_max = 900;
+uint16_t servo6_angle = 600;
+uint16_t servo6_min = 550;
+uint16_t servo6_max = 1250;
 
 //Declare the return data: link status, base state
 uint8_t data[7];
@@ -128,7 +128,7 @@ void loop() {
       }
       //wrist rotation
       if (buf[0] < 120 || buf[0] > 135) {
-        int left_joy_x_delta = map(buf[0], 0, 254, -20, 20);
+        int left_joy_x_delta = map(buf[0], 0, 254, -30, 30);
         if (servo5_angle + left_joy_x_delta > servo5_min &&
             servo5_angle + left_joy_x_delta < servo5_max) {
           servo5_angle += left_joy_x_delta;
@@ -152,7 +152,7 @@ void loop() {
       }
       //shoulder and elbow elevation
       if (buf[4] < 120 || buf[4] > 135) {
-        int right_joy_y_delta = map(buf[4], 0, 254, 20, -20);
+        int right_joy_y_delta = map(buf[4], 0, 254, 10, -10);
         if (servo2_angle + -right_joy_y_delta > servo2_min &&
             servo2_angle + -right_joy_y_delta < servo2_max) {
           servo2_angle += -right_joy_y_delta;
