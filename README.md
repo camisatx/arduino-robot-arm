@@ -2,6 +2,7 @@
 [controller_complete]: ./images/controller-complete.jpg
 [controller_lcd_active]: ./images/controller-lcd-active.jpg
 [controller_lcd_failed]: ./images/controller-lcd-failed.jpg
+[pca9685]: ./images/pca9685.jpg
 [robot_arm_and_controller]: ./images/robot-arm-kit-finished-2.jpg
 [robot_arm_electronics]: ./images/complete-electronics.jpg
 [shield_picture]: ./images/SainSmart-Robot-Shield-Arduino-MEGA2560-R3.jpg
@@ -9,29 +10,23 @@
 
 # Arduino Controlled 5 DoF Robot Arm
 
-This repository contains the code needed to remotely control the 5 DoF robot arm that I built [here](https://joshschertz.com/2017/07/15/Robot-Arm-Part-1-Arm-Build/). If you want to duplicate the same development environment, I recommend you use [VSCode](https://code.visualstudio.com/) with [PlatformIO](https://platformio.org/). PlatformIO handles complex Arduiono projects must better than native Arduino IDE, relevant for this project due to multiple Arduinos being used.
+This repository contains the code needed to remotely control the 5 DoF robot arm that I built [here](https://joshschertz.com/2017/07/15/Robot-Arm-Part-1-Arm-Build/). You can read my post about the project [here](https://joshschertz.com/2020/02/05/Robot-Arm-Part-6-Advanced-Code/). If you want to duplicate the same development environment, I recommend you use [VSCode](https://code.visualstudio.com/) with [PlatformIO](https://platformio.org/). PlatformIO handles complex Arduino projects better than native Arduino IDE. This is important for this project because it is using two Arduinos.
 
 ![Robot arm and controller][robot_arm_and_controller]
 
 ## Hardware Components
 
-The system comprises two arduino controlled components: the robot arm and the controller. The robot arm uses an Arduino Mega2560 and servo shield, where the controller uses a Arduino Uno and shield.
+The system comprises two arduino controlled components: the robot arm and the controller. The robot arm uses an Arduino Mega2560 and PCA9685 board, where the controller uses a Arduino Uno and shield.
 
 The controller uses two joysticks for collecting human inputs. A 16x2 LCD shows relevant information, including joystick inputs, connection status, and arm status. A NRF24 2.4 Ghz radio transceiver handles communication functions with the robot base.
 
-The robot arm uses 6 servos to control arm movement. Arm joints include the shoulder rotation, shoulder elevation, elbow elevation, wrist elevation, wrist rotation, and end-effector open/close movement. A NRF24 2.4 Ghz radio transceiver performs communiction functions with the controller.
+The robot arm uses 6 servos to control arm movement. Arm joints include the shoulder rotation, shoulder elevation, elbow elevation, wrist elevation, wrist rotation, and end-effector open/close movement. A nNRF24L01 2.4 Ghz radio transceiver performs communication functions with the controller.
 
-Do note that the robot arm servo shield has a silk-screen error, where the servo numbers are flipped: the pins marked 8, 9, and 10 are actually pins 11, 12, and 13.
+When trying to use the Sainsmart exclusive servo shield, the servos became very jittery. The cause of the issue was related to inconsistent PWM signals being send to the servos due to the nRF24L01 interrupting the system. If I wanted to use the nRF24L01, I needed to find another solution. The PCA9685 I2C PWM driver provided that, allowing its dedicated controller to exclusively send PWM signals to the servos. So I replaced the SainSmart servo shield for the PCA9685.
 
-![Robot arm shield][shield_picture]
+![PCA 9685 servo board][pca9685]
 
-View the actual servo shield schematic to understand what any unmarked pin is used for. The actual documentation is pretty sparse!
-
-![Robot arm shield schematic][shield_schematic]
-
-Also, make sure you provide dedicated power to the arm servo shield. My specific shield requires 12 volts, but double check what your board needs. 12 volts will instantly kill any Arduino!
-
-![Robot arm electronics][robot_arm_electronics]
+The code in this repository assumes you are also using an I2C servo controller, hence the use of the [Adafruit PCA9685 PWM Servo Driver Library](https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library) included in the [platformio.ini](https://github.com/camisatx/arduino-robot-arm/blob/master/platformio.ini#L22). You will also need to supply a 6 volt power input to the PCA9685 with at least 2 amps of current.
 
 ## Process
 
