@@ -2,7 +2,7 @@
 [controller_complete]: ./images/controller-complete.jpg
 [controller_lcd_active]: ./images/controller-lcd-active.jpg
 [controller_lcd_failed]: ./images/controller-lcd-failed.jpg
-[pca9685]: ./images/pca9685.jpg
+[pca9685]: ./images/pca9685-integrated.jpg
 [robot_arm_and_controller]: ./images/robot-arm-kit-finished-2.jpg
 [robot_arm_electronics]: ./images/complete-electronics.jpg
 [shield_picture]: ./images/SainSmart-Robot-Shield-Arduino-MEGA2560-R3.jpg
